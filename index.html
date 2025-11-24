@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Crear Dirección – Maihue</title>
+
+<link rel="stylesheet" href="styles.css">
+
+</head>
+<body>
+
+<div class="card">
+    <!-- Logo o título -->
+    <div class="header">
+        <h2>Crear Dirección</h2>
+        <p class="subtitle">Ingresa una dirección y la validaremos con Odoo</p>
+    </div>
+
+    <!-- Input con icono de ubicación -->
+    <div class="input-wrapper">
+        <span class="input-icon">📍</span>
+        <input id="direccion"
+               type="text"
+               placeholder="Ej: Av. Apoquindo 4800, Las Condes">
+    </div>
+
+    <!-- Indicador de dirección seleccionada -->
+    <div id="direccion-info" class="direccion-info hidden">
+        <div class="info-badge">✓ Dirección seleccionada</div>
+        <div class="info-details" id="info-details"></div>
+    </div>
+
+    <!-- Campo de información complementaria (aparece después de seleccionar) -->
+    <div id="complemento-wrapper" class="complemento-wrapper hidden">
+        <label for="complemento" class="complemento-label">
+            Información complementaria <span class="opcional">(opcional)</span>
+        </label>
+        <input id="complemento"
+               type="text"
+               placeholder="Ej: Depto 501, Edificio Torre A, Casa 12, etc.">
+        <p class="complemento-hint">💡 Agrega detalles como departamento, oficina, casa, o nombre del condominio</p>
+    </div>
+
+    <!-- Mapa de previsualización -->
+    <div id="map-preview" class="map-preview hidden">
+        <div class="map-header">
+            <span>📍 Ubicación en el mapa</span>
+        </div>
+        <div id="map" class="map-container"></div>
+    </div>
+
+    <!-- Botón -->
+    <button id="btn-crear" onclick="enviarDireccion()">
+        <span class="btn-text">Crear dirección en Odoo</span>
+        <span class="btn-loader hidden">
+            <span class="spinner"></span> Procesando...
+        </span>
+    </button>
+
+    <!-- Mensajes -->
+    <div class="msg" id="msg"></div>
+</div>
+
+<script src="app.js"></script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDfjmgrHC6ebv83PbQwZ_0rLxkwa2brdUE&libraries=places"></script>
+
+<script>
+let autocomplete;
+let map;
+let marker;
+
+function initAutocomplete() {
+    const input = document.getElementById("direccion");
+
+    autocomplete = new google.maps.places.Autocomplete(input, {
+        fields: ["address_components", "geometry", "formatted_address"],
+        componentRestrictions: { country: "cl" }
+    });
+
+    // Evento cuando selecciona una dirección
+    autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+
+        if (!place.address_components || !place.geometry) {
+            window.direccionProcesada = null;
+            document.getElementById("direccion-info").classList.add("hidden");
+            document.getElementById("complemento-wrapper").classList.add("hidden");
+            document.getElementById("map-preview").classList.add("hidden");
+            return;
+        }
+
+        // Helper para extraer componentes
+        const get = (type) =>
+            (place.address_components.find(c => c.types.includes(type)) || {}).long_name || "";
+
+        const street = get("route");
+        const number = get("street_number");
+        const comuna = get("administrative_area_level_3");
+        const region = get("administrative_area_level_1");
+        const postal = get("postal_code");
+        const country = get("country");
+
+        // Guardar objeto listo para enviar al backend
+        window.direccionProcesada = {
+            street,
+            number,
+            comuna,
+            region,
+            postal,
+            country,
+            formatted: place.formatted_address
+        };
+
+        // Rellenar input con dirección bien formateada
+        document.getElementById("direccion").value = place.formatted_address;
+
+        // Mostrar información de la dirección seleccionada
+        const infoDiv = document.getElementById("direccion-info");
+        const infoDetails = document.getElementById("info-details");
+        
+        infoDetails.innerHTML = `
+            <div><strong>Calle:</strong> ${street} ${number || ""}</div>
+            <div><strong>Comuna:</strong> ${comuna || "No especificada"}</div>
+            <div><strong>Región:</strong> ${region || "No especificada"}</div>
+        `;
+        
+        infoDiv.classList.remove("hidden");
+
+        // Mostrar campo de información complementaria
+        document.getElementById("complemento-wrapper").classList.remove("hidden");
+        
+        // Enfocar el campo complementario para que el usuario sepa que puede agregar info
+        setTimeout(() => {
+            document.getElementById("complemento").focus();
+        }, 300);
+
+        // Mostrar el mapa con la ubicación
+        showMapPreview(place.geometry.location, place.formatted_address);
+
+        // Limpiar mensaje de error previo si existe
+        document.getElementById("msg").innerHTML = "";
+        document.getElementById("msg").className = "msg";
+    });
+
+    // Limpiar cuando el usuario empieza a escribir
+    input.addEventListener("input", () => {
+        if (input.value === "") {
+            window.direccionProcesada = null;
+            document.getElementById("direccion-info").classList.add("hidden");
+            document.getElementById("complemento-wrapper").classList.add("hidden");
+            document.getElementById("map-preview").classList.add("hidden");
+            document.getElementById("msg").innerHTML = "";
+            document.getElementById("msg").className = "msg";
+            document.getElementById("complemento").value = "";
+        }
+    });
+}
+
+function showMapPreview(location, address) {
+    const mapPreview = document.getElementById("map-preview");
+    const mapContainer = document.getElementById("map");
+
+    // Mostrar el contenedor del mapa
+    mapPreview.classList.remove("hidden");
+
+    // Si el mapa ya existe, solo actualizar la ubicación
+    if (map) {
+        map.setCenter(location);
+        marker.setPosition(location);
+        marker.setTitle(address);
+    } else {
+        // Crear el mapa por primera vez
+        map = new google.maps.Map(mapContainer, {
+            center: location,
+            zoom: 16,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+            zoomControl: true,
+            styles: [
+                {
+                    featureType: "poi",
+                    elementType: "labels",
+                    stylers: [{ visibility: "off" }]
+                }
+            ]
+        });
+
+        // Crear el marcador
+        marker = new google.maps.Marker({
+            position: location,
+            map: map,
+            title: address,
+            animation: google.maps.Animation.DROP
+        });
+    }
+}
+
+window.onload = initAutocomplete;
+</script>
+
+</body>
+</html>
