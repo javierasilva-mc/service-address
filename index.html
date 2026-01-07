@@ -3,71 +3,290 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Crear Dirección – Maihue</title>
+<title>Gestión de Clientes – Maihue</title>
 
 <link rel="stylesheet" href="styles.css">
 <link rel="icon" href="logo_maihue.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 </head>
 <body>
 
-<div class="card">
-    <!-- Logo o título -->
-    <div class="header">
-        <h2>Crear Dirección</h2>
-        <p class="subtitle">Ingresa una dirección y la validaremos con Odoo</p>
-    </div>
-
-    <!-- Input con icono de ubicación -->
-    <div class="input-wrapper">
-        <span class="input-icon">📍</span>
-        <input id="direccion"
-               type="text"
-               placeholder="Ej: Av. Apoquindo 4800, Las Condes">
-    </div>
-
-    <!-- Indicador de dirección seleccionada -->
-    <div id="direccion-info" class="direccion-info hidden">
-        <div class="info-badge">✓ Dirección seleccionada</div>
-        <div class="info-details" id="info-details"></div>
-    </div>
-
-    <!-- Campo de información complementaria (aparece después de seleccionar) -->
-    <div id="complemento-wrapper" class="complemento-wrapper hidden">
-        <label for="complemento" class="complemento-label">
-            Información complementaria <span class="opcional">(opcional)</span>
-        </label>
-        <input id="complemento"
-               type="text"
-               placeholder="Ej: Depto 501, Edificio Torre A, Casa 12, etc.">
-        <p class="complemento-hint">💡 Agrega detalles como departamento, oficina, casa, o nombre del condominio</p>
-    </div>
-
-    <!-- Mapa de previsualización -->
-    <div id="map-preview" class="map-preview hidden">
-        <div class="map-header">
-            <span>📍 Ubicación en el mapa</span>
+<div class="app-container">
+    <!-- Header con logo -->
+    <header class="app-header">
+        <div class="logo-wrapper">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                </svg>
+            </div>
+            <span class="logo-text">Maihue</span>
         </div>
-        <div id="map" class="map-container"></div>
-    </div>
+    </header>
 
-    <!-- Botón -->
-    <button id="btn-crear" onclick="enviarDireccion()">
-        <span class="btn-text">Crear dirección en Odoo</span>
-        <span class="btn-loader hidden">
-            <span class="spinner"></span> Procesando...
-        </span>
-    </button>
+    <!-- Navegación por tabs -->
+    <nav class="tab-navigation">
+        <button class="tab-btn active" data-tab="direccion">
+            <span class="tab-icon">📍</span>
+            <span class="tab-label">Crear Dirección</span>
+        </button>
+        <button class="tab-btn" data-tab="contacto">
+            <span class="tab-icon">👤</span>
+            <span class="tab-label">Crear Contacto</span>
+        </button>
+    </nav>
 
-    <!-- Mensajes -->
-    <div class="msg" id="msg"></div>
+    <!-- Contenido principal -->
+    <main class="main-content">
+        
+        <!-- ==================== TAB: CREAR DIRECCIÓN ==================== -->
+        <section id="tab-direccion" class="tab-content active">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Crear Dirección</h2>
+                    <p class="subtitle">Ingresa una dirección y la crearemos en Odoo</p>
+                </div>
+
+                <div class="form-section">
+                    <!-- Input con icono de ubicación -->
+                    <div class="input-wrapper">
+                        <span class="input-icon">📍</span>
+                        <input id="direccion"
+                               type="text"
+                               placeholder="Ej: Av. Apoquindo 4800, Las Condes"
+                               autocomplete="off">
+                    </div>
+
+                    <!-- Indicador de dirección seleccionada -->
+                    <div id="direccion-info" class="direccion-info hidden">
+                        <div class="info-badge">✓ Dirección seleccionada</div>
+                        <div class="info-details" id="info-details"></div>
+                    </div>
+
+                    <!-- Campo de información complementaria -->
+                    <div id="complemento-wrapper" class="complemento-wrapper hidden">
+                        <label for="complemento" class="field-label">
+                            Información complementaria <span class="opcional">(opcional)</span>
+                        </label>
+                        <input id="complemento"
+                               type="text"
+                               placeholder="Ej: Depto 501, Edificio Torre A, Casa 12, etc.">
+                        <p class="field-hint">💡 Agrega detalles como departamento, oficina, casa, o nombre del condominio</p>
+                    </div>
+
+                    <!-- Mapa de previsualización -->
+                    <div id="map-preview" class="map-preview hidden">
+                        <div class="map-header">
+                            <span>📍 Ubicación en el mapa</span>
+                        </div>
+                        <div id="map" class="map-container"></div>
+                    </div>
+
+                    <!-- Botón -->
+                    <button id="btn-crear-direccion" class="btn-primary" onclick="enviarDireccion()">
+                        <span class="btn-text">Crear dirección en Odoo</span>
+                        <span class="btn-loader hidden">
+                            <span class="spinner"></span> Procesando...
+                        </span>
+                    </button>
+
+                    <!-- Mensajes -->
+                    <div class="msg" id="msg-direccion"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB: CREAR CONTACTO ==================== -->
+        <section id="tab-contacto" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Crear Contacto</h2>
+                    <p class="subtitle">Registra un nuevo cliente con evaluación comercial</p>
+                </div>
+
+                <div class="form-section">
+                    <!-- Paso 1: RUT y Unidad de Negocio -->
+                    <div class="form-row">
+                        <div class="form-group flex-2">
+                            <label for="rut" class="field-label">
+                                RUT <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <span class="input-icon">🆔</span>
+                                <input id="rut"
+                                       type="text"
+                                       placeholder="Ej: 12345678-9"
+                                       autocomplete="off"
+                                       maxlength="12">
+                            </div>
+                            <p class="field-hint" id="rut-hint">Ingresa el RUT sin puntos</p>
+                        </div>
+
+                        <div class="form-group flex-1">
+                            <label for="unidad-negocio" class="field-label">
+                                Unidad de Negocio <span class="required">*</span>
+                            </label>
+                            <div class="select-wrapper">
+                                <select id="unidad-negocio">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="35">Persona</option>
+                                    <option value="34">Empresa</option>
+                                    <option value="1">Horeca</option>
+                                </select>
+                                <span class="select-arrow">▼</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Indicador de validación RUT -->
+                    <div id="rut-validation" class="validation-indicator hidden">
+                        <span class="validation-icon"></span>
+                        <span class="validation-text"></span>
+                    </div>
+
+                    <!-- Paso 2: Datos de contacto -->
+                    <div class="form-divider">
+                        <span>Datos de contacto</span>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label for="email" class="field-label">
+                                Email <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <span class="input-icon">✉️</span>
+                                <input id="email"
+                                       type="email"
+                                       placeholder="correo@ejemplo.com"
+                                       autocomplete="off">
+                            </div>
+                        </div>
+
+                        <div class="form-group flex-1">
+                            <label for="telefono" class="field-label">
+                                Teléfono <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <span class="input-icon">📱</span>
+                                <input id="telefono"
+                                       type="tel"
+                                       placeholder="Ej: 912345678"
+                                       autocomplete="off"
+                                       maxlength="12">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paso 3: Dirección -->
+                    <div class="form-divider">
+                        <span>Dirección de servicio</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="direccion-contacto" class="field-label">
+                            Dirección <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">📍</span>
+                            <input id="direccion-contacto"
+                                   type="text"
+                                   placeholder="Ej: Av. Apoquindo 4800, Las Condes"
+                                   autocomplete="off">
+                        </div>
+                    </div>
+
+                    <!-- Indicador de dirección seleccionada para contacto -->
+                    <div id="direccion-contacto-info" class="direccion-info hidden">
+                        <div class="info-badge">✓ Dirección seleccionada</div>
+                        <div class="info-details" id="info-details-contacto"></div>
+                    </div>
+
+                    <!-- Campo de información complementaria para contacto -->
+                    <div id="complemento-contacto-wrapper" class="complemento-wrapper hidden">
+                        <label for="complemento-contacto" class="field-label">
+                            Información complementaria <span class="opcional">(opcional)</span>
+                        </label>
+                        <input id="complemento-contacto"
+                               type="text"
+                               placeholder="Ej: Depto 501, Edificio Torre A, Casa 12, etc.">
+                    </div>
+
+                    <!-- Mapa de previsualización para contacto -->
+                    <div id="map-preview-contacto" class="map-preview hidden">
+                        <div class="map-header">
+                            <span>📍 Ubicación en el mapa</span>
+                        </div>
+                        <div id="map-contacto" class="map-container"></div>
+                    </div>
+
+                    <!-- Resumen antes de crear -->
+                    <div id="resumen-contacto" class="resumen-card hidden">
+                        <div class="resumen-header">
+                            <span class="resumen-icon">📋</span>
+                            <span>Resumen del contacto</span>
+                        </div>
+                        <div class="resumen-content" id="resumen-content"></div>
+                    </div>
+
+                    <!-- Botón -->
+                    <button id="btn-crear-contacto" class="btn-primary" onclick="crearContacto()">
+                        <span class="btn-text">Crear contacto en Odoo</span>
+                        <span class="btn-loader hidden">
+                            <span class="spinner"></span> Procesando...
+                        </span>
+                    </button>
+
+                    <!-- Mensajes -->
+                    <div class="msg" id="msg-contacto"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>Maihue Chile © 2025</p>
+    </footer>
 </div>
 
+<!-- Scripts -->
 <script src="app.js"></script>
+<script src="contacto.js"></script>
 
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDfjmgrHC6ebv83PbQwZ_0rLxkwa2brdUE&libraries=places"></script>
 
 <script>
+// ==================== SISTEMA DE TABS ====================
+document.addEventListener("DOMContentLoaded", () => {
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const tabContents = document.querySelectorAll(".tab-content");
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const tabId = btn.dataset.tab;
+
+            // Actualizar botones
+            tabButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+
+            // Actualizar contenido
+            tabContents.forEach(content => {
+                content.classList.remove("active");
+                if (content.id === `tab-${tabId}`) {
+                    content.classList.add("active");
+                }
+            });
+        });
+    });
+});
+
+// ==================== GOOGLE PLACES - DIRECCIÓN SIMPLE ====================
 let autocomplete;
 let map;
 let marker;
@@ -80,7 +299,6 @@ function initAutocomplete() {
         componentRestrictions: { country: "cl" }
     });
 
-    // Evento cuando selecciona una dirección
     autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
 
@@ -92,7 +310,6 @@ function initAutocomplete() {
             return;
         }
 
-        // Helper para extraer componentes
         const get = (type) =>
             (place.address_components.find(c => c.types.includes(type)) || {}).long_name || "";
 
@@ -103,7 +320,6 @@ function initAutocomplete() {
         const postal = get("postal_code");
         const country = get("country");
 
-        // Guardar objeto listo para enviar al backend
         window.direccionProcesada = {
             street,
             number,
@@ -114,10 +330,8 @@ function initAutocomplete() {
             formatted: place.formatted_address
         };
 
-        // Rellenar input con dirección bien formateada
         document.getElementById("direccion").value = place.formatted_address;
 
-        // Mostrar información de la dirección seleccionada
         const infoDiv = document.getElementById("direccion-info");
         const infoDetails = document.getElementById("info-details");
         
@@ -128,51 +342,120 @@ function initAutocomplete() {
         `;
         
         infoDiv.classList.remove("hidden");
-
-        // Mostrar campo de información complementaria
         document.getElementById("complemento-wrapper").classList.remove("hidden");
         
-        // Enfocar el campo complementario para que el usuario sepa que puede agregar info
         setTimeout(() => {
             document.getElementById("complemento").focus();
         }, 300);
 
-        // Mostrar el mapa con la ubicación
-        showMapPreview(place.geometry.location, place.formatted_address);
+        showMapPreview(place.geometry.location, place.formatted_address, "map", "map-preview");
 
-        // Limpiar mensaje de error previo si existe
-        document.getElementById("msg").innerHTML = "";
-        document.getElementById("msg").className = "msg";
+        document.getElementById("msg-direccion").innerHTML = "";
+        document.getElementById("msg-direccion").className = "msg";
     });
 
-    // Limpiar cuando el usuario empieza a escribir
     input.addEventListener("input", () => {
         if (input.value === "") {
             window.direccionProcesada = null;
             document.getElementById("direccion-info").classList.add("hidden");
             document.getElementById("complemento-wrapper").classList.add("hidden");
             document.getElementById("map-preview").classList.add("hidden");
-            document.getElementById("msg").innerHTML = "";
-            document.getElementById("msg").className = "msg";
+            document.getElementById("msg-direccion").innerHTML = "";
+            document.getElementById("msg-direccion").className = "msg";
             document.getElementById("complemento").value = "";
+        }
+    });
+
+    // Inicializar autocomplete para contacto
+    initAutocompleteContacto();
+}
+
+// ==================== GOOGLE PLACES - DIRECCIÓN CONTACTO ====================
+let autocompleteContacto;
+let mapContacto;
+let markerContacto;
+
+function initAutocompleteContacto() {
+    const input = document.getElementById("direccion-contacto");
+
+    autocompleteContacto = new google.maps.places.Autocomplete(input, {
+        fields: ["address_components", "geometry", "formatted_address"],
+        componentRestrictions: { country: "cl" }
+    });
+
+    autocompleteContacto.addListener("place_changed", () => {
+        const place = autocompleteContacto.getPlace();
+
+        if (!place.address_components || !place.geometry) {
+            window.direccionContactoProcesada = null;
+            document.getElementById("direccion-contacto-info").classList.add("hidden");
+            document.getElementById("complemento-contacto-wrapper").classList.add("hidden");
+            document.getElementById("map-preview-contacto").classList.add("hidden");
+            actualizarResumen();
+            return;
+        }
+
+        const get = (type) =>
+            (place.address_components.find(c => c.types.includes(type)) || {}).long_name || "";
+
+        const street = get("route");
+        const number = get("street_number");
+        const comuna = get("administrative_area_level_3");
+        const region = get("administrative_area_level_1");
+        const postal = get("postal_code");
+        const country = get("country");
+
+        window.direccionContactoProcesada = {
+            street,
+            number,
+            comuna,
+            region,
+            postal,
+            country,
+            formatted: place.formatted_address,
+            geometry: place.geometry
+        };
+
+        document.getElementById("direccion-contacto").value = place.formatted_address;
+
+        const infoDiv = document.getElementById("direccion-contacto-info");
+        const infoDetails = document.getElementById("info-details-contacto");
+        
+        infoDetails.innerHTML = `
+            <div><strong>Calle:</strong> ${street} ${number || ""}</div>
+            <div><strong>Comuna:</strong> ${comuna || "No especificada"}</div>
+            <div><strong>Región:</strong> ${region || "No especificada"}</div>
+        `;
+        
+        infoDiv.classList.remove("hidden");
+        document.getElementById("complemento-contacto-wrapper").classList.remove("hidden");
+
+        showMapPreviewContacto(place.geometry.location, place.formatted_address);
+        actualizarResumen();
+    });
+
+    input.addEventListener("input", () => {
+        if (input.value === "") {
+            window.direccionContactoProcesada = null;
+            document.getElementById("direccion-contacto-info").classList.add("hidden");
+            document.getElementById("complemento-contacto-wrapper").classList.add("hidden");
+            document.getElementById("map-preview-contacto").classList.add("hidden");
+            actualizarResumen();
         }
     });
 }
 
-function showMapPreview(location, address) {
-    const mapPreview = document.getElementById("map-preview");
-    const mapContainer = document.getElementById("map");
+function showMapPreview(location, address, mapId, previewId) {
+    const mapPreview = document.getElementById(previewId);
+    const mapContainer = document.getElementById(mapId);
 
-    // Mostrar el contenedor del mapa
     mapPreview.classList.remove("hidden");
 
-    // Si el mapa ya existe, solo actualizar la ubicación
     if (map) {
         map.setCenter(location);
         marker.setPosition(location);
         marker.setTitle(address);
     } else {
-        // Crear el mapa por primera vez
         map = new google.maps.Map(mapContainer, {
             center: location,
             zoom: 16,
@@ -189,10 +472,45 @@ function showMapPreview(location, address) {
             ]
         });
 
-        // Crear el marcador
         marker = new google.maps.Marker({
             position: location,
             map: map,
+            title: address,
+            animation: google.maps.Animation.DROP
+        });
+    }
+}
+
+function showMapPreviewContacto(location, address) {
+    const mapPreview = document.getElementById("map-preview-contacto");
+    const mapContainer = document.getElementById("map-contacto");
+
+    mapPreview.classList.remove("hidden");
+
+    if (mapContacto) {
+        mapContacto.setCenter(location);
+        markerContacto.setPosition(location);
+        markerContacto.setTitle(address);
+    } else {
+        mapContacto = new google.maps.Map(mapContainer, {
+            center: location,
+            zoom: 16,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+            zoomControl: true,
+            styles: [
+                {
+                    featureType: "poi",
+                    elementType: "labels",
+                    stylers: [{ visibility: "off" }]
+                }
+            ]
+        });
+
+        markerContacto = new google.maps.Marker({
+            position: location,
+            map: mapContacto,
             title: address,
             animation: google.maps.Animation.DROP
         });
