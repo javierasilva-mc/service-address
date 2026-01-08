@@ -1,6 +1,14 @@
+// ==================== CREAR DIRECCIÓN ====================
 async function enviarDireccion() {
-    const msgBox = document.getElementById("msg");
-    const btn = document.getElementById("btn-crear");
+    const msgBox = document.getElementById("msg-direccion");
+    const btn = document.getElementById("btn-crear-direccion");
+    
+    // Verificar que los elementos existan
+    if (!btn) {
+        console.error("No se encontró el botón btn-crear-direccion");
+        return;
+    }
+    
     const btnText = btn.querySelector(".btn-text");
     const btnLoader = btn.querySelector(".btn-loader");
 
@@ -25,7 +33,7 @@ async function enviarDireccion() {
     // Agregar el complemento al objeto que se envía
     const dataToSend = {
         ...window.direccionProcesada,
-        street2: complemento // Aquí va la info complementaria (depto, edificio, etc.)
+        street2: complemento
     };
 
     // Deshabilitar botón y mostrar loading
@@ -46,7 +54,6 @@ async function enviarDireccion() {
         const data = await res.json();
 
         if (data.status === "ok") {
-            // Éxito
             msgBox.innerHTML = `✅ <strong>¡Dirección creada exitosamente!</strong><br>ID en Odoo: ${data.id}`;
             msgBox.className = "msg success";
 
@@ -62,14 +69,12 @@ async function enviarDireccion() {
                 msgBox.className = "msg";
             }, 3000);
         } else {
-            // Error del servidor
             let errorMsg = "❌ <strong>Error al crear la dirección</strong><br>";
             
             if (data.error) {
                 errorMsg += data.error;
             }
             
-            // Si hay detalles adicionales del error de Odoo
             if (data.odoo_error) {
                 errorMsg += `<br><small>Detalles: ${JSON.stringify(data.odoo_error)}</small>`;
             }
@@ -78,12 +83,10 @@ async function enviarDireccion() {
             msgBox.className = "msg error";
         }
     } catch (e) {
-        // Error de conexión
         msgBox.innerHTML = `❌ <strong>Error de conexión</strong><br>No se pudo conectar con el servidor. Verifica tu conexión a internet.`;
         msgBox.className = "msg error";
         console.error("Error:", e);
     } finally {
-        // Restaurar botón
         btn.disabled = false;
         btnText.classList.remove("hidden");
         btnLoader.classList.remove("active");
@@ -95,19 +98,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("direccion");
     const complemento = document.getElementById("complemento");
     
-    input.addEventListener("keypress", (e) => {
-        if (e.key === "Enter" && window.direccionProcesada) {
-            // Si presiona Enter en el input principal, pasar al complemento
-            e.preventDefault();
-            complemento.focus();
-        }
-    });
+    if (input) {
+        input.addEventListener("keypress", (e) => {
+            if (e.key === "Enter" && window.direccionProcesada) {
+                e.preventDefault();
+                complemento.focus();
+            }
+        });
+    }
 
-    complemento.addEventListener("keypress", (e) => {
-        if (e.key === "Enter" && window.direccionProcesada) {
-            // Si presiona Enter en el complemento, enviar
-            e.preventDefault();
-            enviarDireccion();
-        }
-    });
+    if (complemento) {
+        complemento.addEventListener("keypress", (e) => {
+            if (e.key === "Enter" && window.direccionProcesada) {
+                e.preventDefault();
+                enviarDireccion();
+            }
+        });
+    }
 });

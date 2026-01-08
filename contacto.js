@@ -50,6 +50,11 @@ function validarRut(rut) {
         return { valid: false, error: "RUT muy largo (máximo 8 dígitos)" };
     }
     
+    // Validar que no sean todos los dígitos iguales (ej: 11111111, 77777777)
+    if (/^(\d)\1+$/.test(cuerpo)) {
+        return { valid: false, error: "RUT inválido (números repetidos)" };
+    }
+    
     // Calcular dígito verificador
     let suma = 0;
     let multiplicador = 2;
@@ -550,52 +555,212 @@ async function crearContacto() {
         const data = await res.json();
         
         if (data.status === "ok") {
-            let successMsg = `✅ <strong>¡Contacto creado exitosamente!</strong><br>`;
-            successMsg += `<small>`;
-            successMsg += `Contacto ID: ${data.contact_id}<br>`;
-            successMsg += `Dirección servicio ID: ${data.service_address_partner_id}<br>`;
-            successMsg += `Service Address ID: ${data.service_address_id}`;
-            successMsg += `</small>`;
-            
-            if (data.equifax_mock) {
-                successMsg += `<br><small style="color: #d97706;">⚠️ Datos de Equifax simulados (modo desarrollo)</small>`;
-            }
-            
-            msgBox.innerHTML = successMsg;
-            msgBox.className = "msg success";
-            
-            // Limpiar formulario después de 4 segundos
-            setTimeout(() => {
-                limpiarFormularioContacto();
-            }, 4000);
+            // ÉXITO - Mostrar pantalla de confirmación
+            mostrarResultado({
+                tipo: "success",
+                rut: formatearRut(rut),
+                nombre: data.nombre || unidadNombre,
+                email: email,
+                telefono: telefono,
+                direccion: window.direccionContactoProcesada.formatted,
+                contactId: data.contact_id,
+                serviceAddressId: data.service_address_id,
+                scoringStatus: data.scoring_status || "approved",
+                isMock: data.equifax_mock || false
+            });
             
         } else {
-            let errorMsg = "❌ <strong>Error al crear el contacto</strong><br>";
-            
-            if (data.error) {
-                errorMsg += data.error;
+            // ERROR
+            if (data.step === "verificando_rut_duplicado" && data.partner_id) {
+                // RUT ya existe
+                mostrarResultado({
+                    tipo: "error_duplicado",
+                    rut: formatearRut(rut),
+                    partnerName: data.partner_name,
+                    partnerId: data.partner_id,
+                    error: data.error
+                });
+            } else {
+                // Otro error
+                mostrarResultado({
+                    tipo: "error",
+                    rut: formatearRut(rut),
+                    error: data.error,
+                    step: data.step,
+                    odooError: data.odoo_error
+                });
             }
-            
-            if (data.step) {
-                errorMsg += `<br><small>Paso: ${data.step}</small>`;
-            }
-            
-            if (data.odoo_error) {
-                errorMsg += `<br><small>Detalles: ${JSON.stringify(data.odoo_error)}</small>`;
-            }
-            
-            msgBox.innerHTML = errorMsg;
-            msgBox.className = "msg error";
         }
     } catch (e) {
-        msgBox.innerHTML = `❌ <strong>Error de conexión</strong><br>No se pudo conectar con el servidor. Verifica tu conexión a internet.`;
-        msgBox.className = "msg error";
+        // Error de conexión
+        mostrarResultado({
+            tipo: "error",
+            rut: formatearRut(rut),
+            error: "No se pudo conectar con el servidor. Verifica tu conexión a internet."
+        });
         console.error("Error:", e);
     } finally {
         btn.disabled = false;
         btnText.classList.remove("hidden");
         btnLoader.classList.remove("active");
+        msgBox.innerHTML = "";
+        msgBox.className = "msg";
     }
+}
+
+// ==================== MOSTRAR RESULTADO ====================
+
+function mostrarResultado(data) {
+    const formCard = document.getElementById("form-contacto");
+    const resultadoCard = document.getElementById("resultado-contacto");
+    const resultadoContent = document.getElementById("resultado-content");
+    
+    let html = '';
+    
+    if (data.tipo === "success") {
+        // Determinar badge de estado
+        let badgeClass = "approved";
+        let badgeText = "✓ Aprobado";
+        
+        if (data.scoringStatus === "discarded") {
+            badgeClass = "rejected";
+            badgeText = "✗ Descartado";
+        } else if (data.scoringStatus === "to_review") {
+            badgeClass = "review";
+            badgeText = "⏳ En revisión";
+        }
+        
+        html = `
+            <div class="resultado-container">
+                <div class="resultado-icon success">✓</div>
+                <h2 class="resultado-title">¡Contacto creado exitosamente!</h2>
+                <p class="resultado-subtitle">El contacto ha sido registrado en Odoo correctamente.</p>
+                
+                <div class="resultado-details">
+                    <div class="resultado-detail-row">
+                        <span class="resultado-detail-label">RUT</span>
+                        <span class="resultado-detail-value">${data.rut}</span>
+                    </div>
+                    <div class="resultado-detail-row">
+                        <span class="resultado-detail-label">Email</span>
+                        <span class="resultado-detail-value">${data.email}</span>
+                    </div>
+                    <div class="resultado-detail-row">
+                        <span class="resultado-detail-label">Teléfono</span>
+                        <span class="resultado-detail-value">+56 ${data.telefono}</span>
+                    </div>
+                    <div class="resultado-detail-row">
+                        <span class="resultado-detail-label">Dirección</span>
+                        <span class="resultado-detail-value">${data.direccion}</span>
+                    </div>
+                    <div class="resultado-detail-row">
+                        <span class="resultado-detail-label">ID Contacto</span>
+                        <span class="resultado-detail-value">#${data.contactId}</span>
+                    </div>
+                    <div class="resultado-detail-row">
+                        <span class="resultado-detail-label">Evaluación Comercial</span>
+                        <span class="resultado-detail-value">
+                            <span class="resultado-badge ${badgeClass}">${badgeText}</span>
+                        </span>
+                    </div>
+                    ${data.isMock ? `
+                    <div class="resultado-detail-row">
+                        <span class="resultado-detail-label">Modo</span>
+                        <span class="resultado-detail-value">
+                            <span class="resultado-badge mock">🔧 Desarrollo</span>
+                        </span>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="resultado-actions">
+                    <button class="btn-primary-small" onclick="volverAFormulario()">
+                        Crear otro contacto
+                    </button>
+                </div>
+            </div>
+        `;
+    } else if (data.tipo === "error_duplicado") {
+        html = `
+            <div class="resultado-container">
+                <div class="resultado-icon warning">⚠️</div>
+                <h2 class="resultado-title">RUT ya registrado</h2>
+                <p class="resultado-subtitle">Este RUT ya existe como contacto en Odoo.</p>
+                
+                <div class="error-rut-existente">
+                    <div class="error-title">
+                        <span>ℹ️</span> Información del contacto existente
+                    </div>
+                    <div class="error-detail">
+                        <strong>RUT:</strong> ${data.rut}<br>
+                        <strong>Nombre:</strong> ${data.partnerName}<br>
+                        <strong>ID:</strong> #${data.partnerId}
+                    </div>
+                </div>
+                
+                <div class="resultado-actions">
+                    <button class="btn-primary-small" onclick="volverAFormulario()">
+                        Ingresar otro contacto
+                    </button>
+                </div>
+            </div>
+        `;
+    } else {
+        // Error genérico
+        html = `
+            <div class="resultado-container">
+                <div class="resultado-icon error">✗</div>
+                <h2 class="resultado-title">Error al crear contacto</h2>
+                <p class="resultado-subtitle">${data.error || "Ocurrió un error inesperado"}</p>
+                
+                ${data.step ? `
+                <div class="error-rut-existente">
+                    <div class="error-title">
+                        <span>🔍</span> Detalles del error
+                    </div>
+                    <div class="error-detail">
+                        <strong>Paso:</strong> ${data.step}<br>
+                        ${data.odooError ? `<strong>Detalle:</strong> ${JSON.stringify(data.odooError)}` : ''}
+                    </div>
+                </div>
+                ` : ''}
+                
+                <div class="resultado-actions">
+                    <button class="btn-secondary" onclick="volverAFormulario(true)">
+                        Volver a intentar
+                    </button>
+                    <button class="btn-primary-small" onclick="volverAFormulario()">
+                        Nuevo contacto
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    resultadoContent.innerHTML = html;
+    
+    // Ocultar formulario, mostrar resultado
+    formCard.classList.add("hidden");
+    resultadoCard.classList.remove("hidden");
+}
+
+// ==================== VOLVER A FORMULARIO ====================
+
+function volverAFormulario(mantenerDatos = false) {
+    const formCard = document.getElementById("form-contacto");
+    const resultadoCard = document.getElementById("resultado-contacto");
+    
+    // Mostrar formulario, ocultar resultado
+    resultadoCard.classList.add("hidden");
+    formCard.classList.remove("hidden");
+    
+    // Limpiar si no se mantienen datos
+    if (!mantenerDatos) {
+        limpiarFormularioContacto();
+    }
+    
+    // Scroll al inicio
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function limpiarFormularioContacto() {

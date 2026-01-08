@@ -102,7 +102,8 @@
 
         <!-- ==================== TAB: CREAR CONTACTO ==================== -->
         <section id="tab-contacto" class="tab-content">
-            <div class="card">
+            <!-- FORMULARIO -->
+            <div id="form-contacto" class="card">
                 <div class="card-header">
                     <h2>Crear Contacto</h2>
                     <p class="subtitle">Registra un nuevo cliente con evaluación comercial</p>
@@ -244,6 +245,12 @@
                     <!-- Mensajes -->
                     <div class="msg" id="msg-contacto"></div>
                 </div>
+            </div>
+
+            <!-- PANTALLA DE RESULTADO -->
+            <div id="resultado-contacto" class="card resultado-card hidden">
+                <!-- Contenido dinámico según éxito o error -->
+                <div id="resultado-content"></div>
             </div>
         </section>
 
