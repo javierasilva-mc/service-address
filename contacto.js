@@ -566,7 +566,12 @@ async function crearContacto() {
                 contactId: data.contact_id,
                 serviceAddressId: data.service_address_id,
                 scoringStatus: data.scoring_status || "approved",
-                isMock: data.equifax_mock || false
+                isMock: data.equifax_mock || false,
+                // Información de cambio de tipo
+                changedType: data.changed_type || false,
+                changedTo: data.changed_to || null,
+                unidadNegocioOriginal: data.unidad_negocio_original || unidadNombre,
+                unidadNegocioFinal: data.unidad_negocio_final || unidadNombre
             });
             
         } else {
@@ -579,6 +584,14 @@ async function crearContacto() {
                     partnerName: data.partner_name,
                     partnerId: data.partner_id,
                     error: data.error
+                });
+            } else if (data.step === "consultando_equifax") {
+                // Error de Equifax
+                mostrarResultado({
+                    tipo: "error_equifax",
+                    rut: formatearRut(rut),
+                    error: data.error,
+                    equifaxStatus: data.equifax_status
                 });
             } else {
                 // Otro error
@@ -630,16 +643,41 @@ function mostrarResultado(data) {
             badgeText = "⏳ En revisión";
         }
         
+        // Generar aviso de cambio de tipo si aplica
+        let cambioTipoHtml = '';
+        if (data.changedType && data.changedTo) {
+            cambioTipoHtml = `
+                <div class="cambio-tipo-aviso">
+                    <div class="cambio-tipo-icon">🔄</div>
+                    <div class="cambio-tipo-content">
+                        <strong>Unidad de negocio corregida automáticamente</strong>
+                        <p>Se seleccionó <strong>${data.unidadNegocioOriginal}</strong> pero el RUT corresponde a <strong>${data.unidadNegocioFinal}</strong>.</p>
+                        <small>El contacto fue registrado como ${data.unidadNegocioFinal}.</small>
+                    </div>
+                </div>
+            `;
+        }
+        
         html = `
             <div class="resultado-container">
                 <div class="resultado-icon success">✓</div>
                 <h2 class="resultado-title">¡Contacto creado exitosamente!</h2>
                 <p class="resultado-subtitle">El contacto ha sido registrado en Odoo correctamente.</p>
                 
+                ${cambioTipoHtml}
+                
                 <div class="resultado-details">
                     <div class="resultado-detail-row">
                         <span class="resultado-detail-label">RUT</span>
                         <span class="resultado-detail-value">${data.rut}</span>
+                    </div>
+                    <div class="resultado-detail-row">
+                        <span class="resultado-detail-label">Nombre</span>
+                        <span class="resultado-detail-value">${data.nombre}</span>
+                    </div>
+                    <div class="resultado-detail-row">
+                        <span class="resultado-detail-label">Unidad de Negocio</span>
+                        <span class="resultado-detail-value">${data.unidadNegocioFinal}</span>
                     </div>
                     <div class="resultado-detail-row">
                         <span class="resultado-detail-label">Email</span>
@@ -695,6 +733,54 @@ function mostrarResultado(data) {
                         <strong>RUT:</strong> ${data.rut}<br>
                         <strong>Nombre:</strong> ${data.partnerName}<br>
                         <strong>ID:</strong> #${data.partnerId}
+                    </div>
+                </div>
+                
+                <div class="resultado-actions">
+                    <button class="btn-primary-small" onclick="volverAFormulario()">
+                        Ingresar otro contacto
+                    </button>
+                </div>
+            </div>
+        `;
+    } else if (data.tipo === "error_equifax") {
+        // Determinar icono y título según el error
+        let iconClass = "error";
+        let iconSymbol = "✗";
+        let titulo = "Error en evaluación comercial";
+        let subtitulo = data.error || "No se pudo realizar la evaluación comercial";
+        
+        // Personalizar según el estado de Equifax
+        if (data.equifaxStatus === "Persona Difunta") {
+            iconSymbol = "⚠️";
+            iconClass = "warning";
+            titulo = "RUT no válido para registro";
+            subtitulo = "El RUT ingresado corresponde a una persona difunta.";
+        } else if (data.equifaxStatus === "Rut no existente") {
+            iconSymbol = "❓";
+            iconClass = "warning";
+            titulo = "RUT no encontrado";
+            subtitulo = "El RUT ingresado no existe en los registros de Equifax.";
+        } else if (data.equifaxStatus === "Reporte vacio") {
+            iconSymbol = "📄";
+            iconClass = "warning";
+            titulo = "Sin información comercial";
+            subtitulo = "No se encontró información comercial para este RUT.";
+        }
+        
+        html = `
+            <div class="resultado-container">
+                <div class="resultado-icon ${iconClass}">${iconSymbol}</div>
+                <h2 class="resultado-title">${titulo}</h2>
+                <p class="resultado-subtitle">${subtitulo}</p>
+                
+                <div class="error-rut-existente">
+                    <div class="error-title">
+                        <span>ℹ️</span> Información
+                    </div>
+                    <div class="error-detail">
+                        <strong>RUT consultado:</strong> ${data.rut}<br>
+                        ${data.equifaxStatus ? `<strong>Estado Equifax:</strong> ${data.equifaxStatus}` : ''}
                     </div>
                 </div>
                 
